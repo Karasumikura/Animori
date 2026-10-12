@@ -79,7 +79,7 @@ class SettingsDetailScaffold extends StatelessWidget {
       );
     }
 
-    // Keep routed panes opaque during transitions.
+    // Routed panes share the ambient Animori background.
     return Scaffold(
       appBar: appBar,
       body: body,

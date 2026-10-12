@@ -4,7 +4,6 @@ import 'package:animori/bean/card/network_img_layer.dart';
 import 'package:animori/bean/dialog/dialog_helper.dart';
 import 'package:animori/modules/bangumi/bangumi_item.dart';
 
-// 视频卡片 - 垂直布局
 class BangumiCardV extends StatelessWidget {
   const BangumiCardV({
     super.key,
@@ -12,58 +11,119 @@ class BangumiCardV extends StatelessWidget {
     this.canTap = true,
     this.enableHero = true,
   });
-
   final BangumiItem bangumiItem;
   final bool canTap;
   final bool enableHero;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.zero,
-      child: GestureDetector(
-        child: InkWell(
-          onTap: () {
-            if (!canTap) {
-              AnimoriDialog.showToast(
-                message: '编辑模式',
-              );
-              return;
-            }
-            context.pushNamed('/info/', arguments: bangumiItem);
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AspectRatio(
-                aspectRatio: 0.65,
-                child: LayoutBuilder(builder: (context, boxConstraints) {
-                  final double maxWidth = boxConstraints.maxWidth;
-                  final double maxHeight = boxConstraints.maxHeight;
-                  return enableHero
-                      ? Hero(
-                          transitionOnUserGestures: true,
-                          flightShuttleBuilder:
-                              NetworkImgLayer.heroFlightShuttleBuilder,
-                          tag: bangumiItem.id,
-                          child: NetworkImgLayer(
-                            src: bangumiItem.images['large'] ?? '',
-                            width: maxWidth,
-                            height: maxHeight,
+    final colors = Theme.of(context).colorScheme;
+    final image = LayoutBuilder(
+      builder: (context, constraints) => NetworkImgLayer(
+        src: bangumiItem.images['large'] ?? '',
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+      ),
+    );
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () {
+          if (!canTap) {
+            AnimoriDialog.showToast(message: '编辑模式');
+            return;
+          }
+          context.pushNamed('/info/', arguments: bangumiItem);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    enableHero
+                        ? Hero(
+                            tag: bangumiItem.id,
+                            flightShuttleBuilder:
+                                NetworkImgLayer.heroFlightShuttleBuilder,
+                            child: image,
+                          )
+                        : image,
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Color(0x88000000)],
+                          stops: [0.65, 1],
+                        ),
+                      ),
+                    ),
+                    if (bangumiItem.ratingScore > 0)
+                      Positioned(
+                        bottom: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
                           ),
-                        )
-                      : NetworkImgLayer(
-                          src: bangumiItem.images['large'] ?? '',
-                          width: maxWidth,
-                          height: maxHeight,
-                        );
-                }),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.48),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: Color(0xFFFFD88A),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                bangumiItem.ratingScore.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              BangumiContent(bangumiItem: bangumiItem)
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(3, 10, 3, 3),
+              child: Text(
+                bangumiItem.nameCn.isEmpty
+                    ? bangumiItem.name
+                    : bangumiItem.nameCn,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Text(
+                bangumiItem.airDate.isEmpty ? '探索这部作品' : bangumiItem.airDate,
+                maxLines: 1,
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -72,41 +132,16 @@ class BangumiCardV extends StatelessWidget {
 
 class BangumiContent extends StatelessWidget {
   const BangumiContent({super.key, required this.bangumiItem});
-
   final BangumiItem bangumiItem;
-
   @override
-  Widget build(BuildContext context) {
-    final ts = MediaQuery.textScalerOf(context);
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(5, 3, 5, 1),
-        child: LayoutBuilder(builder: (context, constraints) {
-          final style = DefaultTextStyle.of(context).style.copyWith(
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
-              );
-          final textScaler = ts.clamp(maxScaleFactor: 1.1);
-          final painter = TextPainter(
-            text: TextSpan(text: bangumiItem.nameCn, style: style),
-            textDirection: Directionality.of(context),
-            textScaler: textScaler,
-          );
-          final lines = (constraints.maxHeight / painter.preferredLineHeight)
-              .floor()
-              .clamp(1, 3);
-          painter.dispose();
-          return Text(
-            bangumiItem.nameCn,
-            textAlign: TextAlign.start,
-            style: style,
-            textScaler: textScaler,
-            maxLines: lines,
-            overflow: TextOverflow.ellipsis,
-          );
-        }),
+  Widget build(BuildContext context) => Expanded(
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        bangumiItem.nameCn.isEmpty ? bangumiItem.name : bangumiItem.nameCn,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-    );
-  }
+    ),
+  );
 }

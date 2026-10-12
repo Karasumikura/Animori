@@ -6,6 +6,7 @@ import 'package:animori/bean/widget/embedded_native_control_area.dart';
 import 'package:animori/navigation.dart';
 import 'package:animori/pages/menu/route_visibility.dart';
 import 'package:animori/pages/router.dart';
+import 'package:animori/pages/menu/animori_navigation.dart';
 
 class ScaffoldMenu extends StatefulWidget {
   const ScaffoldMenu({super.key, required this.location});
@@ -107,12 +108,10 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
             _handleSystemBack(context);
           }
         },
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            return orientation == Orientation.portrait
-                ? _bottomMenu(context, _selectedIndex)
-                : _sideMenu(context, _selectedIndex);
-          },
+        child: LayoutBuilder(
+          builder: (context, constraints) => constraints.maxWidth >= 900
+              ? _sideMenu(context, _selectedIndex)
+              : _bottomMenu(context, _selectedIndex),
         ),
       ),
     );
@@ -127,96 +126,43 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     if (borderRadius != null) {
       child = ClipRRect(borderRadius: borderRadius, child: child);
     }
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: borderRadius,
-      ),
-      child: child,
-    );
+    return child;
   }
 
-  Widget _bottomMenu(BuildContext context, int selectedIndex) {
-    return Scaffold(
-      body: _outlet(context),
-      bottomNavigationBar: NavigationBar(
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: '推荐',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.timeline),
-            icon: Icon(Icons.timeline_outlined),
-            label: '时间表',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.favorite),
-            icon: Icon(Icons.favorite_outlined),
-            label: '追番',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.settings),
-            icon: Icon(Icons.settings),
-            label: '我的',
-          ),
-        ],
+  Widget _bottomMenu(BuildContext context, int selectedIndex) => Scaffold(
+    body: _outlet(context),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: AnimoriNavigation(
         selectedIndex: selectedIndex,
-        onDestinationSelected: _selectDestination,
+        onSelect: _selectDestination,
+        onSearch: () => context.pushNamed('/search/'),
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _sideMenu(BuildContext context, int selectedIndex) {
-    const borderRadius = BorderRadius.only(
-      topLeft: Radius.circular(16),
-      bottomLeft: Radius.circular(16),
-    );
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      body: Row(
+  Widget _sideMenu(BuildContext context, int selectedIndex) => Scaffold(
+    body: SafeArea(
+      child: Row(
         children: [
-          EmbeddedNativeControlArea(
-            child: NavigationRail(
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              groupAlignment: 1,
-              leading: FloatingActionButton(
-                elevation: 0,
-                heroTag: null,
-                onPressed: () => context.pushNamed('/search/'),
-                child: const Icon(Icons.search),
+          SizedBox(
+            width: 228,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+              child: EmbeddedNativeControlArea(
+                child: AnimoriNavigation(
+                  vertical: true,
+                  selectedIndex: selectedIndex,
+                  onSelect: _selectDestination,
+                  onSearch: () => context.pushNamed('/search/'),
+                ),
               ),
-              labelType: NavigationRailLabelType.selected,
-              destinations: const <NavigationRailDestination>[
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.home),
-                  icon: Icon(Icons.home_outlined),
-                  label: Text('推荐'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.timeline),
-                  icon: Icon(Icons.timeline_outlined),
-                  label: Text('时间表'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.favorite),
-                  icon: Icon(Icons.favorite_border),
-                  label: Text('追番'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.settings),
-                  icon: Icon(Icons.settings_outlined),
-                  label: Text('我的'),
-                ),
-              ],
-              selectedIndex: selectedIndex,
-              onDestinationSelected: _selectDestination,
             ),
           ),
-          Expanded(child: _outlet(context, borderRadius: borderRadius)),
+          Expanded(child: _outlet(context)),
         ],
       ),
-    );
-  }
+    ),
+  );
 }

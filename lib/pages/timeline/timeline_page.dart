@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animori/bean/widget/animori_design.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -20,10 +21,7 @@ part 'timeline_options.dart';
 part 'timeline_week_selector.dart';
 
 class TimelinePage extends StatefulWidget {
-  const TimelinePage({
-    super.key,
-    required this.controller,
-  });
+  const TimelinePage({super.key, required this.controller});
 
   final TimelineController controller;
 
@@ -72,23 +70,31 @@ class _TimelinePageState extends State<TimelinePage> {
                 return ContentSection(
                   title: '$year',
                   padding: const EdgeInsets.all(8),
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    final columns =
-                        MediaQuery.textScalerOf(context).scale(14) > 21 ? 2 : 4;
-                    return Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: [
-                        for (final month in [1, 4, 7, 10])
-                          SizedBox(
-                            width: (constraints.maxWidth - 4 * (columns - 1)) /
-                                columns,
-                            child: _seasonButton(
-                                context, DateTime(year, month), now),
-                          ),
-                      ],
-                    );
-                  }),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns =
+                          MediaQuery.textScalerOf(context).scale(14) > 21
+                          ? 2
+                          : 4;
+                      return Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          for (final month in [1, 4, 7, 10])
+                            SizedBox(
+                              width:
+                                  (constraints.maxWidth - 4 * (columns - 1)) /
+                                  columns,
+                              child: _seasonButton(
+                                context,
+                                DateTime(year, month),
+                                now,
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -105,10 +111,12 @@ class _TimelinePageState extends State<TimelinePage> {
       style: TextButton.styleFrom(
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        backgroundColor:
-            selected ? colors.secondaryContainer : Colors.transparent,
-        foregroundColor:
-            selected ? colors.onSecondaryContainer : colors.onSurface,
+        backgroundColor: selected
+            ? colors.secondaryContainer
+            : Colors.transparent,
+        foregroundColor: selected
+            ? colors.onSecondaryContainer
+            : colors.onSurface,
       ),
       onPressed: !date.isAfter(now)
           ? () {
@@ -135,8 +143,9 @@ class _TimelinePageState extends State<TimelinePage> {
     return DefaultTabController(
       length: 7,
       initialIndex: DateTime.now().weekday - 1,
-      animationDuration:
-          MediaQuery.disableAnimationsOf(context) ? Duration.zero : null,
+      animationDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : null,
       child: _buildContent(context),
     );
   }
@@ -144,163 +153,200 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget _buildContent(BuildContext context) {
     final theme = Theme.of(context);
     final scaler = MediaQuery.textScalerOf(context);
-    return LayoutBuilder(builder: (context, constraints) {
-      final narrowPortrait = constraints.maxWidth < 600 &&
-          constraints.maxHeight > constraints.maxWidth;
-      final sidePadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
-      final contentWidth =
-          (constraints.maxWidth - sidePadding * 2).clamp(0.0, 1280.0);
-      final inset = (constraints.maxWidth - contentWidth) / 2;
-      final minCardWidth = scaler.scale(16) > 24 ? 440.0 : 340.0;
-      final columns =
-          ((contentWidth + 12) / (minCardWidth + 12)).floor().clamp(1, 3);
-      return Observer(builder: (context) {
-        final loading = _controller.isLoading;
-        final failed = _controller.isTimeOut;
-        final watchingIds = _controller.loadWatchingBangumiIds();
-        final calendar = _controller.filterCalendar(watchingIds);
-        final today = DateTime.now();
-        final currentSeason = isSameSeason(_controller.selectedDate, today);
-        final seasonHeader = narrowPortrait
-            ? null
-            : _buildSeasonHeader(context,
-                loading: loading, compact: constraints.maxHeight < 500);
-        final weekHeight = _TimelineWeekSelector.heightFor(scaler) + 16;
-        final weekSelector = Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, 16),
-          child: _TimelineWeekSelector(
-            counts: calendar.map((day) => day.length).toList(),
-            todayIndex: currentSeason ? today.weekday - 1 : null,
-            isLoading: loading || failed,
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrowPortrait =
+            constraints.maxWidth < 600 &&
+            constraints.maxHeight > constraints.maxWidth;
+        final sidePadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
+        final contentWidth = (constraints.maxWidth - sidePadding * 2).clamp(
+          0.0,
+          1280.0,
         );
-        return Scaffold(
-          appBar: SysAppBar(
-            needTopOffset: false,
-            toolbarHeight: 72,
-            title: narrowPortrait
-                ? _buildSeasonPicker(context, loading: loading, inAppBar: true)
-                : Text(
-                    '时间表',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: _TimelineOptionsButton(
-                  availableWidth: constraints.maxWidth,
-                  sort: _controller.sort,
-                  filterCount: _controller.activeFilterCount,
-                  onPressed: _showOptions,
-                ),
+        final inset = (constraints.maxWidth - contentWidth) / 2;
+        final minCardWidth = scaler.scale(16) > 24 ? 440.0 : 340.0;
+        final columns = ((contentWidth + 12) / (minCardWidth + 12))
+            .floor()
+            .clamp(1, 3);
+        return Observer(
+          builder: (context) {
+            final loading = _controller.isLoading;
+            final failed = _controller.isTimeOut;
+            final watchingIds = _controller.loadWatchingBangumiIds();
+            final calendar = _controller.filterCalendar(watchingIds);
+            final today = DateTime.now();
+            final currentSeason = isSameSeason(_controller.selectedDate, today);
+            final seasonHeader = narrowPortrait
+                ? null
+                : _buildSeasonHeader(
+                    context,
+                    loading: loading,
+                    compact: constraints.maxHeight < 500,
+                  );
+            final weekHeight = _TimelineWeekSelector.heightFor(scaler) + 16;
+            final weekSelector = Padding(
+              padding: EdgeInsets.fromLTRB(inset, 0, inset, 16),
+              child: _TimelineWeekSelector(
+                counts: calendar.map((day) => day.length).toList(),
+                todayIndex: currentSeason ? today.weekday - 1 : null,
+                isLoading: loading || failed,
               ),
-            ],
-          ),
-          body: SafeArea(
-            top: false,
-            child: LayoutBuilder(
-                builder: (context, viewport) => NestedScrollView(
-                      // Keep the outer viewport clamped and unstretched so tabs stay fixed.
-                      physics: const ClampingScrollPhysics(),
-                      scrollBehavior: ScrollConfiguration.of(context).copyWith(
-                        overscroll: false,
-                        scrollbars: false,
+            );
+            return Scaffold(
+              appBar: SysAppBar(
+                needTopOffset: false,
+                toolbarHeight: 72,
+                title: narrowPortrait
+                    ? _buildSeasonPicker(
+                        context,
+                        loading: loading,
+                        inAppBar: true,
+                      )
+                    : Text(
+                        '放送日历',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                        if (seasonHeader != null)
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(inset, 8, inset, 20),
-                              child: seasonHeader,
-                            ),
-                          ),
-                        SliverOverlapAbsorber(
-                          handle:
-                              NestedScrollView.sliverOverlapAbsorberHandleFor(
-                                  context),
-                          sliver: SliverPersistentHeader(
-                            pinned: true,
-                            delegate: _WeekHeaderDelegate(
-                              height: weekHeight,
-                              color: theme.scaffoldBackgroundColor,
-                              child: weekSelector,
-                            ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _TimelineOptionsButton(
+                      availableWidth: constraints.maxWidth,
+                      sort: _controller.sort,
+                      filterCount: _controller.activeFilterCount,
+                      onPressed: _showOptions,
+                    ),
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                top: false,
+                child: LayoutBuilder(
+                  builder: (context, viewport) => NestedScrollView(
+                    // Keep the outer viewport clamped and unstretched so tabs stay fixed.
+                    physics: const ClampingScrollPhysics(),
+                    scrollBehavior: ScrollConfiguration.of(
+                      context,
+                    ).copyWith(overscroll: false, scrollbars: false),
+                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(inset, 12, inset, 24),
+                          child: const AnimoriHeading(
+                            eyebrow: 'ON AIR',
+                            title: '每一周，都有新期待。',
+                            description: '跟随放送节奏，发现今天值得看的作品。',
                           ),
                         ),
-                      ],
-                      body: loading && calendar.every((day) => day.isEmpty)
-                          ? _buildLoading(viewport.maxHeight, weekHeight)
-                          : failed
-                              ? _TimelineScrollView(
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: const EdgeInsets.all(24),
-                                      sliver: SliverToBoxAdapter(
-                                        child: BangumiMirrorErrorWidget(
-                                          onRetry: () => _controller.loadSeason(
-                                              _controller.selectedDate),
-                                          onSettingsReturned: () {
-                                            if (mounted) setState(() {});
-                                          },
-                                        ),
-                                      ),
+                      ),
+                      if (seasonHeader != null)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(inset, 8, inset, 20),
+                            child: seasonHeader,
+                          ),
+                        ),
+                      SliverOverlapAbsorber(
+                        handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                          context,
+                        ),
+                        sliver: SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _WeekHeaderDelegate(
+                            height: weekHeight,
+                            color: theme.scaffoldBackgroundColor,
+                            child: weekSelector,
+                          ),
+                        ),
+                      ),
+                    ],
+                    body: loading && calendar.every((day) => day.isEmpty)
+                        ? _buildLoading(viewport.maxHeight, weekHeight)
+                        : failed
+                        ? _TimelineScrollView(
+                            slivers: [
+                              SliverPadding(
+                                padding: const EdgeInsets.all(24),
+                                sliver: SliverToBoxAdapter(
+                                  child: BangumiMirrorErrorWidget(
+                                    onRetry: () => _controller.loadSeason(
+                                      _controller.selectedDate,
                                     ),
-                                  ],
-                                )
-                              : TabBarView(
-                                  children: [
-                                    for (var day = 0; day < 7; day++)
-                                      _buildDay(
-                                        context,
-                                        day: day,
-                                        items: calendar[day],
-                                        watchingIds: watchingIds,
-                                        columns: columns,
-                                        inset: inset,
-                                        compact: narrowPortrait,
-                                      ),
-                                  ],
+                                    onSettingsReturned: () {
+                                      if (mounted) setState(() {});
+                                    },
+                                  ),
                                 ),
-                    )),
-          ),
+                              ),
+                            ],
+                          )
+                        : TabBarView(
+                            children: [
+                              for (var day = 0; day < 7; day++)
+                                _buildDay(
+                                  context,
+                                  day: day,
+                                  items: calendar[day],
+                                  watchingIds: watchingIds,
+                                  columns: columns,
+                                  inset: inset,
+                                  compact: narrowPortrait,
+                                ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
-      });
-    });
+      },
+    );
   }
 
   Widget _buildLoading(double viewportHeight, double overlapHeight) {
-    return LayoutBuilder(builder: (context, constraints) {
-      // Center loading in the full viewport, including the scroll headers.
-      final contentHeight =
-          (constraints.maxHeight - overlapHeight).clamp(0.0, double.infinity);
-      final headerHeight = viewportHeight - contentHeight;
-      final bottomInset = headerHeight.clamp(
-          0.0, (contentHeight - 48).clamp(0.0, double.infinity));
-      return _TimelineScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: EdgeInsets.only(bottom: bottomInset),
-              child: const Center(child: LoadingIndicator()),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Center loading in the full viewport, including the scroll headers.
+        final contentHeight = (constraints.maxHeight - overlapHeight).clamp(
+          0.0,
+          double.infinity,
+        );
+        final headerHeight = viewportHeight - contentHeight;
+        final bottomInset = headerHeight.clamp(
+          0.0,
+          (contentHeight - 48).clamp(0.0, double.infinity),
+        );
+        return _TimelineScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottomInset),
+                child: const Center(child: LoadingIndicator()),
+              ),
             ),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
   }
 
-  Widget _buildSeasonPicker(BuildContext context,
-      {required bool loading, bool compact = false, bool inAppBar = false}) {
+  Widget _buildSeasonPicker(
+    BuildContext context, {
+    required bool loading,
+    bool compact = false,
+    bool inAppBar = false,
+  }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final label = _seasonLabel(_controller.selectedDate);
     final style = inAppBar
         ? theme.textTheme.titleMedium
         : compact || MediaQuery.textScalerOf(context).scale(16) > 24
-            ? theme.textTheme.titleLarge
-            : theme.textTheme.headlineMedium;
+        ? theme.textTheme.titleLarge
+        : theme.textTheme.headlineMedium;
     return Semantics(
       label: '切换放送季度，$label',
       button: true,
@@ -318,12 +364,15 @@ class _TimelinePageState extends State<TimelinePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: Text(label,
-                      maxLines: inAppBar ? 1 : null,
-                      overflow: inAppBar ? TextOverflow.ellipsis : null,
-                      style: style?.copyWith(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(
+                    label,
+                    maxLines: inAppBar ? 1 : null,
+                    overflow: inAppBar ? TextOverflow.ellipsis : null,
+                    style: style?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 SizedBox(width: inAppBar ? 4 : 12),
                 if (inAppBar)
@@ -343,8 +392,11 @@ class _TimelinePageState extends State<TimelinePage> {
     );
   }
 
-  Widget _buildSeasonHeader(BuildContext context,
-      {required bool loading, required bool compact}) {
+  Widget _buildSeasonHeader(
+    BuildContext context, {
+    required bool loading,
+    required bool compact,
+  }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final date = _controller.selectedDate;
@@ -356,8 +408,9 @@ class _TimelinePageState extends State<TimelinePage> {
         if (!compact)
           Text(
             loading ? '正在加载放送时间表…' : '$startMonth — ${startMonth + 2} 月 · 每周放送',
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: colors.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
       ],
     );
@@ -373,8 +426,9 @@ class _TimelinePageState extends State<TimelinePage> {
     required bool compact,
   }) {
     final cardHeight = BangumiTimelineCard.heightFor(
-        MediaQuery.textScalerOf(context),
-        compact: compact);
+      MediaQuery.textScalerOf(context),
+      compact: compact,
+    );
     final rawCalendar = _controller.bangumiCalendar;
     final filteredOut = day < rawCalendar.length && rawCalendar[day].isNotEmpty;
     return _TimelineScrollView(
@@ -410,20 +464,17 @@ class _TimelinePageState extends State<TimelinePage> {
                 crossAxisSpacing: 12,
                 mainAxisExtent: cardHeight,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = items[index];
-                  return BangumiTimelineCard(
-                    key: ValueKey(item.id),
-                    bangumiItem: item,
-                    compact: compact,
-                    showRating: _showRating,
-                    isWatching: watchingIds.contains(item.id),
-                    onTap: () => context.pushNamed('/info/', arguments: item),
-                  );
-                },
-                childCount: items.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = items[index];
+                return BangumiTimelineCard(
+                  key: ValueKey(item.id),
+                  bangumiItem: item,
+                  compact: compact,
+                  showRating: _showRating,
+                  isWatching: watchingIds.contains(item.id),
+                  onTap: () => context.pushNamed('/info/', arguments: item),
+                );
+              }, childCount: items.length),
             ),
           ),
       ],
@@ -468,8 +519,10 @@ class _WeekHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-          BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      ColoredBox(color: color, child: child);
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => ColoredBox(color: color, child: child);
 
   @override
   bool shouldRebuild(covariant _WeekHeaderDelegate oldDelegate) =>

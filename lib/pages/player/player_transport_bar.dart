@@ -1,15 +1,19 @@
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:animori/bean/widget/liquid_glass.dart';
 
 enum PlayerTimeLabelPlacement {
   aboveProgress,
   besideProgress,
   afterPlaybackButtons;
 
-  static PlayerTimeLabelPlacement forViewport(Size viewport,
-      {required bool desktop}) {
+  static PlayerTimeLabelPlacement forViewport(
+    Size viewport, {
+    required bool desktop,
+  }) {
     if (desktop) return afterPlaybackButtons;
-    final hasRoomForSideLabels = viewport.shortestSide >= 600 &&
+    final hasRoomForSideLabels =
+        viewport.shortestSide >= 600 &&
         viewport.shortestSide / viewport.longestSide >= 9 / 16;
     return hasRoomForSideLabels ? besideProgress : aboveProgress;
   }
@@ -38,13 +42,28 @@ class PlayerTransportBar extends StatelessWidget {
   final Widget fullscreen;
 
   @override
-  Widget build(BuildContext context) => compact
-      ? Row(children: [
-          playPause,
-          Expanded(child: progressBuilder(TimeLabelLocation.none)),
-          timeLabel,
-          fullscreen,
-        ])
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.all(compact ? 6 : 12),
+    child: LiquidGlass(
+      radius: compact ? 20 : 26,
+      blurSigma: 12,
+      tint: const Color(0xFF18252C),
+      glassOpacity: 0.82,
+      elevated: false,
+      padding: EdgeInsets.all(compact ? 4 : 10),
+      child: _controls(context),
+    ),
+  );
+
+  Widget _controls(BuildContext context) => compact
+      ? Row(
+          children: [
+            playPause,
+            Expanded(child: progressBuilder(TimeLabelLocation.none)),
+            timeLabel,
+            fullscreen,
+          ],
+        )
       : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -63,18 +82,22 @@ class PlayerTransportBar extends StatelessWidget {
               ),
             ),
             Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(children: [
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
                   playPause,
                   nextEpisode,
                   if (timePlacement ==
                       PlayerTimeLabelPlacement.afterPlaybackButtons)
                     Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: timeLabel),
+                      padding: const EdgeInsets.only(left: 10),
+                      child: timeLabel,
+                    ),
                   Expanded(child: controls),
                   fullscreen,
-                ])),
+                ],
+              ),
+            ),
             if (timePlacement != PlayerTimeLabelPlacement.aboveProgress)
               const SizedBox(height: 6),
           ],

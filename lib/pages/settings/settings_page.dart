@@ -5,6 +5,7 @@ import 'package:animori/bean/appbar/sys_app_bar.dart';
 import 'package:animori/bean/settings/settings_detail_scaffold.dart';
 import 'package:animori/bean/settings/settings_list.dart';
 import 'package:animori/bean/widget/content_section.dart';
+import 'package:animori/bean/widget/animori_design.dart';
 import 'package:animori/pages/settings/player_settings.dart';
 import 'package:animori/utils/constants.dart';
 
@@ -184,9 +185,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void _replaceCategory(String path) {
     final outlet = _outletKey.currentState!;
     // Nested pushes leave _location unchanged, so check the stack as well.
-    if (!outlet.canPop &&
-        !_isSecondaryRoute &&
-        _selectedCategoryPath == path) {
+    if (!outlet.canPop && !_isSecondaryRoute && _selectedCategoryPath == path) {
       return;
     }
     _categoryNavigation = null;
@@ -220,59 +219,67 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final wide = constraints.maxWidth > LayoutBreakpoint.compact['width']!;
-      return NavigatorPopHandler<Object?>(
-        onPopWithResult: (_) => _goBack(),
-        child: Scaffold(
-          appBar: wide
-              ? SysAppBar(
-                  title: const Text('设置'),
-                  leading: BackButton(onPressed: _exitSettings),
-                )
-              : null,
-          body: SafeArea(
-            top: false,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Keep the outlet at the same tree position on resize.
-                SizedBox(
-                  width: wide ? 280 : 0,
-                  child: Offstage(
-                    offstage: !wide,
-                    child: _SettingsMenu(
-                      wide: true,
-                      selectedPath: _selectedCategoryPath,
-                      onSelect: _replaceCategory,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: SettingsPaneScope(
-                    embedded: wide,
-                    showBackButton: _isSecondaryRoute,
-                    onBack: _goBack,
-                    child: NotificationListener<_SettingsCategorySelected>(
-                      onNotification: (notification) {
-                        _pushCategory(notification.path);
-                        return true;
-                      },
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          pageTransitionsTheme: settingsPageTransitionsTheme,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth > LayoutBreakpoint.compact['width']!;
+        return NavigatorPopHandler<Object?>(
+          onPopWithResult: (_) => _goBack(),
+          child: Scaffold(
+            appBar: wide
+                ? SysAppBar(
+                    title: const Text('设置'),
+                    leading: BackButton(onPressed: _exitSettings),
+                  )
+                : null,
+            body: SafeArea(
+              top: false,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Keep the outlet at the same tree position on resize.
+                  SizedBox(
+                    width: wide ? 280 : 0,
+                    child: Offstage(
+                      offstage: !wide,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 20),
+                        child: AnimoriPanel(
+                          padding: EdgeInsets.zero,
+                          child: _SettingsMenu(
+                            wide: true,
+                            selectedPath: _selectedCategoryPath,
+                            onSelect: _replaceCategory,
+                          ),
                         ),
-                        child: RouterOutlet(key: _outletKey),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: SettingsPaneScope(
+                      embedded: wide,
+                      showBackButton: _isSecondaryRoute,
+                      onBack: _goBack,
+                      child: NotificationListener<_SettingsCategorySelected>(
+                        onNotification: (notification) {
+                          _pushCategory(notification.path);
+                          return true;
+                        },
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            pageTransitionsTheme: settingsPageTransitionsTheme,
+                          ),
+                          child: RouterOutlet(key: _outletKey),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }
 
@@ -287,9 +294,11 @@ class SettingsIndexPage extends StatelessWidget {
     return Scaffold(
       appBar: SysAppBar(
         title: const Text('设置'),
-        leading: BackButton(onPressed: () {
-          if (!context.maybePop()) context.navigate('/tab/my');
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (!context.maybePop()) context.navigate('/tab/my');
+          },
+        ),
       ),
       body: _SettingsMenu(
         wide: false,
@@ -319,6 +328,15 @@ class _SettingsMenu extends StatelessWidget {
             ? const EdgeInsets.fromLTRB(4, 0, 0, 12)
             : const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          if (!wide)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 12, 4, 24),
+              child: AnimoriHeading(
+                eyebrow: 'MAKE IT YOURS',
+                title: '按你的方式观看。',
+                description: '从画质到每一个细节，定制你的 Animori。',
+              ),
+            ),
           for (final group in _settingsGroups)
             if (wide) ...[
               Padding(

@@ -18,13 +18,13 @@ class PlayerContentTabs extends StatelessWidget {
         .clamp(48.0, double.infinity);
 
     return Material(
-      color: colors.surface,
+      color: Colors.transparent,
       child: TabBar(
         controller: controller,
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.all(12),
         dividerHeight: 0,
-        splashBorderRadius: BorderRadius.zero,
-        indicatorSize: TabBarIndicatorSize.label,
+        splashBorderRadius: BorderRadius.circular(18),
+        indicatorSize: TabBarIndicatorSize.tab,
         indicatorWeight: 4,
         labelColor: colors.primary,
         unselectedLabelColor: colors.onSurfaceVariant,
