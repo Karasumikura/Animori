@@ -18,10 +18,12 @@ class BangumiCardV extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final image = NetworkImgLayer(
-      src: bangumiItem.images['large'] ?? '',
-      width: double.infinity,
-      height: double.infinity,
+    final image = LayoutBuilder(
+      builder: (context, constraints) => NetworkImgLayer(
+        src: bangumiItem.images['large'] ?? '',
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+      ),
     );
     return Material(
       color: Colors.transparent,

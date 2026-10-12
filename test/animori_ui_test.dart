@@ -130,6 +130,7 @@ void main() {
         expect(destination, 2);
         await tester.tap(find.text('寻找想看的番剧'));
         expect(searched, isTrue);
+        await tester.pumpAndSettle();
         final boundary =
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 1);

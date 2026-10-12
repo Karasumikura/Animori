@@ -37,25 +37,28 @@ class DownloadRecordCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final episodes = record.episodes.values;
     final totalCount = episodes.length;
-    final completedCount =
-        episodes.where((e) => e.status == DownloadStatus.completed).length;
+    final completedCount = episodes
+        .where((e) => e.status == DownloadStatus.completed)
+        .length;
     final activeCount = episodes
-        .where((e) =>
-            e.status == DownloadStatus.downloading ||
-            e.status == DownloadStatus.resolving ||
-            e.status == DownloadStatus.pending)
+        .where(
+          (e) =>
+              e.status == DownloadStatus.downloading ||
+              e.status == DownloadStatus.resolving ||
+              e.status == DownloadStatus.pending,
+        )
         .length;
     final aggregateProgress = totalCount == 0
         ? 0.0
         : episodes.fold<double>(
-              0,
-              (sum, e) =>
-                  sum +
-                  (e.status == DownloadStatus.completed
-                      ? 1.0
-                      : e.progressPercent),
-            ) /
-            totalCount;
+                0,
+                (sum, e) =>
+                    sum +
+                    (e.status == DownloadStatus.completed
+                        ? 1.0
+                        : e.progressPercent),
+              ) /
+              totalCount;
     final allCompleted = completedCount >= totalCount;
 
     var meta = '$completedCount/$totalCount 已完成';
@@ -69,7 +72,7 @@ class DownloadRecordCard extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surface.withValues(alpha: 0.65),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -94,8 +97,9 @@ class DownloadRecordCard extends StatelessWidget {
                       children: [
                         Text(
                           record.bangumiName,
-                          style: textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -124,8 +128,10 @@ class DownloadRecordCard extends StatelessWidget {
                   AnimoriMenuButton(
                     animated: false,
                     builder: (context, toggle) => IconButton(
-                      icon: Icon(Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant),
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       tooltip: '更多操作',
                       onPressed: toggle,
                     ),
@@ -196,7 +202,8 @@ class DownloadEpisodeTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isError = episode.status == DownloadStatus.failed;
-    final showProgress = episode.status == DownloadStatus.downloading ||
+    final showProgress =
+        episode.status == DownloadStatus.downloading ||
         (episode.status == DownloadStatus.paused &&
             episode.progressPercent > 0);
 

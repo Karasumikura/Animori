@@ -131,7 +131,7 @@ class _PopularPageState extends State<PopularPage> {
           ),
           Observer(
             builder: (_) {
-              if (popularController.isTimeOut)
+              if (popularController.isTimeOut) {
                 return SliverToBoxAdapter(
                   child: SizedBox(
                     height: 360,
@@ -145,6 +145,7 @@ class _PopularPageState extends State<PopularPage> {
                     ),
                   ),
                 );
+              }
               final items = popularController.currentTag.isEmpty
                   ? popularController.trendList
                   : popularController.bangumiList;
