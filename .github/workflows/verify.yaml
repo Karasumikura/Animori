@@ -1,0 +1,28 @@
+name: Verify Animori
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - name: Install native build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --fatal-warnings
+      - name: Test
+        run: flutter test --reporter expanded

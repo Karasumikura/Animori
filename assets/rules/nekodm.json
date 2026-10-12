@@ -1,0 +1,19 @@
+{
+    "deprecated": true,
+    "api": "2",
+    "type": "anime",
+    "name": "nekodm",
+    "version": "1.2",
+    "muliSources": true,
+    "useWebview": true,
+    "useNativePlayer": true,
+    "usePost": false,
+    "userAgent": "",
+    "baseURL": "https://nekodm.com/",
+    "searchURL": "https://nekodm.com/search?wd=@keyword",
+    "searchList": "//div[3]/div[1]/div/div/div",
+    "searchName": "//a/p",
+    "searchResult": "//a",
+    "chapterRoads": "//div[3]/div[6]",
+    "chapterResult": "//a"
+}

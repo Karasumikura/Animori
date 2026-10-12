@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 贡献指引
+    url: https://github.com/Karasumikura/Animori/blob/main/static/doc/CONTRIBUTING.md
+    about: 开发环境、构建方法与贡献说明。

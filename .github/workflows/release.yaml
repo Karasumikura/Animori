@@ -1,0 +1,143 @@
+name: Release Animori
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - name: Validate release version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
+          test "$GITHUB_REF_NAME" = "v$version"
+      - name: Install native build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --fatal-warnings
+      - run: flutter test --reporter expanded
+
+  android:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build g++
+      - run: flutter pub get
+      - name: Configure release signing
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        shell: bash
+        run: |
+          test -n "$KEYSTORE" && test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/animori-release.p12"
+          printf 'storeFile=%s\nstorePassword=%s\nkeyPassword=%s\nkeyAlias=%s\n' "$RUNNER_TEMP/animori-release.p12" "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+      - name: Build universal Android APK
+        run: flutter build apk --release
+      - name: Verify APK signature and package
+        shell: bash
+        run: |
+          tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk
+          "$tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > "$RUNNER_TEMP/apk-info.txt"
+          head -5 "$RUNNER_TEMP/apk-info.txt"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Animori_android_${GITHUB_REF_NAME}.apk"
+      - name: Remove signing material from runner
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/animori-release.p12"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: dist/*.apk
+          if-no-files-found: error
+
+  windows:
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git config --system core.longpaths true
+      - name: Install YAML reader for Flutter version selection
+        run: choco install yq -y --no-progress
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Package complete portable application
+        shell: pwsh
+        run: |
+          $release = 'build/windows/x64/runner/Release'
+          foreach ($required in @('animori.exe', 'flutter_windows.dll', 'data/flutter_assets')) {
+            if (!(Test-Path "$release/$required")) { throw "Missing runtime file: $required" }
+          }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path "$release/*" -DestinationPath "dist/Animori_windows_${env:GITHUB_REF_NAME}.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-release'
+          merge-multiple: true
+          path: dist
+      - name: Prepare checksums and draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          cd dist
+          sha256sum *.apk *.zip > SHA256SUMS.txt
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          Animori 首个独立版本。
+
+          面向对画面有高要求的观众，自动比较可用来源的清晰度与码率，优先选择最高画质播放。
+
+          - Android：下载 APK 安装，包含 ARM64、ARMv7 与 x86_64。
+          - Windows x64：下载 ZIP，完整解压后运行 animori.exe。
+          - SHA256SUMS.txt 可用于校验下载文件。
+
+          实际可选画质受来源提供的视频、网络条件及设备解码能力影响。
+          NOTES
+          gh release create "$GITHUB_REF_NAME" *.apk *.zip SHA256SUMS.txt --draft --verify-tag --title "Animori $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md"

@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+ln -sf /opt/Animori/animori /usr/bin/animori
+chmod +x /usr/bin/animori
+update-mime-database /usr/share/mime || true
+update-desktop-database /usr/share/applications || true
+exit 0
