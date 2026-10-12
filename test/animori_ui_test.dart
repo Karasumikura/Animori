@@ -11,14 +11,15 @@ import 'package:animori/bean/widget/animori_design.dart';
 import 'package:animori/modules/my/watch_stats.dart';
 import 'package:animori/pages/menu/animori_navigation.dart';
 import 'package:animori/pages/my/my_space_view.dart';
-import 'package:animori/pages/popular/discovery_hero.dart';
 import 'package:animori/pages/popular/popular_page.dart';
 import 'package:animori/pages/popular/popular_controller.dart';
 import 'package:mobx/mobx.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:file/local.dart';
 import 'package:animori/services/storage/storage.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:animori/bean/card/bangumi_card.dart';
 import 'package:animori/modules/bangumi/bangumi_item.dart';
 
 void main() {
@@ -31,6 +32,7 @@ void main() {
     PathProviderPlatform.instance = _TestPaths(storage.path);
     Hive.init(storage.path);
     await GStorage.init();
+    CachedNetworkImageProvider.defaultCacheManager = _FixtureCache();
     final font = FontLoader('MI_Sans_Regular')
       ..addFont(rootBundle.load('assets/fonts/MiSans-Regular.ttf'));
     await font.load();
@@ -53,7 +55,7 @@ void main() {
           .cast<Map<String, dynamic>>()
           .map(BangumiItem.fromJson)
           .toList();
-  for (final size in [const Size(390, 844), const Size(1280, 860)]) {
+  for (final size in [const Size(390, 1100), const Size(1280, 1000)]) {
     for (final brightness in Brightness.values) {
       testWidgets('Glass discovery at $size, $brightness', (tester) async {
         tester.view.physicalSize = size;
@@ -61,57 +63,12 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         var destination = -1;
-        var searched = false;
+
         final key = GlobalKey();
         final wide = size.width >= 900;
-        final content = SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const AnimoriHeading(
-                eyebrow: 'ANIMORI / DISCOVER',
-                title: '发现你的下一部心动',
-                description: '好故事，值得以更清晰的方式相遇。',
-              ),
-              const SizedBox(height: 24),
-              AnimoriDiscoveryHero(onSearch: () => searched = true),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final name in ['为你发现', '日常', '科幻', '冒险'])
-                    ChoiceChip(
-                      label: Text(name),
-                      selected: name == '为你发现',
-                      onSelected: (_) {},
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                '此刻热门',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 18,
-                  childAspectRatio: .58,
-                ),
-                itemCount: snapshot.length,
-                itemBuilder: (context, index) => BangumiCardV(
-                  bangumiItem: snapshot[index],
-                  enableHero: false,
-                ),
-              ),
-            ],
-          ),
-        );
+        final controller = PopularController();
+        controller.trendList.addAll(snapshot);
+        final content = PopularPage(controller: controller);
         await tester.pumpWidget(
           MaterialApp(
             theme: buildAnimoriTheme(
@@ -133,7 +90,7 @@ void main() {
                                   vertical: true,
                                   selectedIndex: 0,
                                   onSelect: (i) => destination = i,
-                                  onSearch: () => searched = true,
+                                  onSearch: () {},
                                 ),
                               ),
                             ),
@@ -148,7 +105,7 @@ void main() {
                           child: AnimoriNavigation(
                             selectedIndex: 0,
                             onSelect: (i) => destination = i,
-                            onSearch: () => searched = true,
+                            onSearch: () {},
                           ),
                         ),
                 ),
@@ -157,11 +114,21 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        // Let local fixture reads and image decoding finish outside fake time.
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        });
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widgetList<RawImage>(find.byType(RawImage))
+              .where((image) => image.image != null),
+          isNotEmpty,
+        );
         expect(tester.takeException(), isNull);
         await tester.tap(find.text('资料库'));
         expect(destination, 2);
-        await tester.tap(find.text('寻找想看的番剧'));
-        expect(searched, isTrue);
+
         await tester.pumpAndSettle();
         final boundary =
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -280,4 +247,36 @@ class _TestPaths extends PathProviderPlatform {
   Future<String?> getApplicationSupportPath() async => path;
   @override
   Future<String?> getTemporaryPath() async => path;
+}
+
+// Serve the exact downloaded trending snapshot without network or disk cache plugins.
+class _FixtureCache implements BaseCacheManager {
+  final subjects =
+      (jsonDecode(
+                File(
+                  'test/fixtures/discovery/subjects.json',
+                ).readAsStringSync(),
+              )
+              as List)
+          .cast<Map<String, dynamic>>()
+          .map(BangumiItem.fromJson)
+          .toList();
+  @override
+  Stream<FileResponse> getFileStream(
+    String url, {
+    String? key,
+    Map<String, String>? headers,
+    bool withProgress = false,
+  }) async* {
+    final item = subjects.firstWhere((item) => item.images['large'] == url);
+    yield FileInfo(
+      const LocalFileSystem().file('test/fixtures/discovery/${item.id}.jpg'),
+      FileSource.Cache,
+      DateTime(2100),
+      url,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
