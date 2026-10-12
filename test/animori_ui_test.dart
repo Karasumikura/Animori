@@ -17,6 +17,9 @@ void main() {
     final font = FontLoader('MI_Sans_Regular')
       ..addFont(rootBundle.load('assets/fonts/MiSans-Regular.ttf'));
     await font.load();
+    final icons = FontLoader('MaterialIcons')
+      ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+    await icons.load();
   });
   for (final size in [const Size(390, 844), const Size(1280, 860)]) {
     for (final brightness in Brightness.values) {
