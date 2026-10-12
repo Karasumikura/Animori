@@ -5,6 +5,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+env:
+  BUILD_LABEL: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('preview-{0}', github.run_number) }}
+
 permissions:
   contents: read
 
@@ -22,7 +25,9 @@ jobs:
         shell: bash
         run: |
           version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
-          test "$GITHUB_REF_NAME" = "v$version"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "$GITHUB_REF_NAME" = "v$version"
+          fi
       - name: Install native build tools
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++
       - run: flutter pub get
@@ -66,7 +71,7 @@ jobs:
           "$tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > "$RUNNER_TEMP/apk-info.txt"
           head -5 "$RUNNER_TEMP/apk-info.txt"
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/Animori_android_${GITHUB_REF_NAME}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Animori_android_${BUILD_LABEL}.apk"
       - name: Remove signing material from runner
         if: always()
         run: rm -f android/key.properties "$RUNNER_TEMP/animori-release.p12"
@@ -103,7 +108,7 @@ jobs:
             if (!(Test-Path "$release/$required")) { throw "Missing runtime file: $required" }
           }
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path "$release/*" -DestinationPath "dist/Animori_windows_${env:GITHUB_REF_NAME}.zip"
+          Compress-Archive -Path "$release/*" -DestinationPath "dist/Animori_windows_${env:BUILD_LABEL}.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-release
@@ -111,6 +116,7 @@ jobs:
           if-no-files-found: error
 
   release:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [android, windows]
     runs-on: ubuntu-latest
     permissions:

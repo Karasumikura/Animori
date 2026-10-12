@@ -133,14 +133,16 @@ void main() {
         await tester.pumpAndSettle();
         final boundary =
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 1);
-        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        final output = Directory('build/ui-preview')
-          ..createSync(recursive: true);
-        File(
-          '${output.path}/discovery-${wide ? 'desktop' : 'mobile'}-${brightness.name}.png',
-        ).writeAsBytesSync(bytes!.buffer.asUint8List());
-        image.dispose();
+        await tester.runAsync(() async {
+          final image = await boundary.toImage(pixelRatio: 1);
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          final output = Directory('build/ui-preview')
+            ..createSync(recursive: true);
+          File(
+            '${output.path}/discovery-${wide ? 'desktop' : 'mobile'}-${brightness.name}.png',
+          ).writeAsBytesSync(bytes!.buffer.asUint8List());
+          image.dispose();
+        });
       });
     }
   }
