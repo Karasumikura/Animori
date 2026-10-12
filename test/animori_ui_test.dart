@@ -69,6 +69,27 @@ void main() {
         final controller = PopularController();
         controller.trendList.addAll(snapshot);
         final content = PopularPage(controller: controller);
+        await tester.runAsync(() async {
+          final extent = size.width - (wide ? 228 : 0) - 48;
+          final columns = (extent / 170).floor().clamp(2, 7);
+          final width = ((extent - (columns - 1) * 16) / columns).round();
+          for (final item in snapshot) {
+            final provider = ResizeImage(
+              CachedNetworkImageProvider(item.images['large']!),
+              width: width,
+            );
+            final ready = Completer<void>();
+            final stream = provider.resolve(ImageConfiguration.empty);
+            final listener = ImageStreamListener(
+              (_, _) => ready.complete(),
+              onError: (Object error, StackTrace? stack) =>
+                  ready.completeError(error, stack),
+            );
+            stream.addListener(listener);
+            await ready.future;
+            stream.removeListener(listener);
+          }
+        });
         await tester.pumpWidget(
           MaterialApp(
             theme: buildAnimoriTheme(
@@ -121,8 +142,17 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           tester
-              .widgetList<RawImage>(find.byType(RawImage))
-              .where((image) => image.image != null),
+              .widgetList<RawImage>(
+                find.descendant(
+                  of: find.byType(CachedNetworkImage),
+                  matching: find.byType(RawImage),
+                ),
+              )
+              .where(
+                (image) =>
+                    image.image != null &&
+                    image.image!.height > image.image!.width,
+              ),
           isNotEmpty,
         );
         expect(tester.takeException(), isNull);
