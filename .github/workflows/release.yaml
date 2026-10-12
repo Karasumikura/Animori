@@ -136,9 +136,14 @@ jobs:
           cd dist
           sha256sum *.apk *.zip > SHA256SUMS.txt
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
-          Animori 首个独立版本。
+          Animori 1.0.1。
 
-          面向对画面有高要求的观众，自动比较可用来源的清晰度与码率，优先选择最高画质播放。
+          - 全面更新界面：玻璃通透面板、柔和渐变，支持浅色与深色主题。
+          - 修复首次打开应用后热门列表未自动显示的问题。
+          - 在线规则更新接入共享规则仓库，并提供 GitCode 镜像。
+          - README 加入包含热门海报的桌面与移动端预览。
+
+          自动比较可用来源的清晰度与码率，优先选择最高画质播放。
 
           - Android：下载 APK 安装，包含 ARM64、ARMv7 与 x86_64。
           - Windows x64：下载 ZIP，完整解压后运行 animori.exe。
