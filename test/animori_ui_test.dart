@@ -81,9 +81,11 @@ void main() {
             final ready = Completer<void>();
             final stream = provider.resolve(ImageConfiguration.empty);
             final listener = ImageStreamListener(
-              (_, _) => ready.complete(),
+              (_, _) {
+                if (!ready.isCompleted) ready.complete();
+              },
               onError: (Object error, StackTrace? stack) =>
-                  ready.completeError(error, stack),
+                  ready.isCompleted ? null : ready.completeError(error, stack),
             );
             stream.addListener(listener);
             await ready.future;
