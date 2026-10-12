@@ -15,6 +15,22 @@
 
 Animori 是一款面向画质爱好者的 Flutter 番剧播放应用。在自定义规则与多视频源的基础上，加入跨源码率实测、自动优选播放，以及 Liquid Clarity 界面，减少反复切换片源的操作。
 
+## 界面预览
+
+玻璃通透面板与柔和渐变，支持浅色与深色主题。以下由真实首页组件渲染，使用热门数据快照；实际「此刻热门」会随数据源更新。
+
+**桌面 · 浅色**
+
+![桌面浅色首页与此刻热门](static/preview/discovery-desktop-light.png)
+
+**桌面 · 深色**
+
+![桌面深色首页与此刻热门](static/preview/discovery-desktop-dark.png)
+
+| 移动端 · 浅色 | 移动端 · 深色 |
+| --- | --- |
+| ![移动端浅色首页与此刻热门](static/preview/discovery-mobile-light.png) | ![移动端深色首页与此刻热门](static/preview/discovery-mobile-dark.png) |
+
 ## 为画面而选
 
 - **跨源自动优选**：检索已配置规则中的番剧来源，探测视频流，自动选择成功测量来源中码率最高的一项。
