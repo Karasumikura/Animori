@@ -19,11 +19,12 @@ class ApiEndpoints {
 
   /// 规则仓库
   static const String pluginShop =
-      'https://raw.githubusercontent.com/Karasumikura/Animori/main/assets/rules/';
+      'https://raw.githubusercontent.com/Predidit/KazumiRules/main/';
 
   /// 规则仓库镜像
   static const String pluginShopMirror = String.fromEnvironment(
     'ANIMORI_RULES_MIRROR_URL',
+    defaultValue: 'https://raw.gitcode.com/gh_mirrors/ka/KazumiRules/raw/main/',
   );
 
   /// 在线升级
