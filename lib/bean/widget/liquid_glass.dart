@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// iOS 液态玻璃容器：实时背景模糊 + 半透明体积渐变 + 高光边缘 + 漂浮阴影。
+/// Animori 玻璃容器：实时背景模糊 + 半透明体积渐变 + 高光边缘 + 漂浮阴影。
 class LiquidGlass extends StatelessWidget {
   const LiquidGlass({
     super.key,
@@ -35,11 +35,17 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final dark = brightness == Brightness.dark;
-    final base = tint ?? (dark ? Colors.grey.shade900 : Colors.white);
+    final base = tint ?? (dark ? const Color(0xFF1E303B) : Colors.white);
     final corner = BorderRadius.circular(radius);
 
     final body = Stack(
       children: [
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+            child: const SizedBox.expand(),
+          ),
+        ),
         // 体积渐变：顶部偏亮、底部偏暗，营造玻璃厚度。
         Positioned.fill(
           child: DecoratedBox(
@@ -48,21 +54,19 @@ class LiquidGlass extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.alphaBlend(Colors.white.withValues(alpha: dark ? 0.10 : 0.22), base)
-                      .withValues(alpha: glassOpacity),
+                  Color.alphaBlend(
+                    Colors.white.withValues(alpha: dark ? 0.10 : 0.22),
+                    base,
+                  ).withValues(alpha: glassOpacity),
                   base.withValues(alpha: glassOpacity * (dark ? 0.72 : 0.62)),
-                  Color.alphaBlend(Colors.black.withValues(alpha: dark ? 0.18 : 0.06), base)
-                      .withValues(alpha: glassOpacity * 0.9),
+                  Color.alphaBlend(
+                    Colors.black.withValues(alpha: dark ? 0.18 : 0.06),
+                    base,
+                  ).withValues(alpha: glassOpacity * 0.9),
                 ],
                 stops: const [0.0, 0.55, 1.0],
               ),
             ),
-          ),
-        ),
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-            child: const SizedBox.expand(),
           ),
         ),
         if (specular)
@@ -195,15 +199,19 @@ class _LiquidGlassButtonState extends State<LiquidGlassButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, size: 19, color: enabled ? accent : colors.onSurfaceVariant),
+                Icon(
+                  widget.icon,
+                  size: 19,
+                  color: enabled ? accent : colors.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
               ],
               Text(
                 widget.label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: enabled ? accent : colors.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: enabled ? accent : colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

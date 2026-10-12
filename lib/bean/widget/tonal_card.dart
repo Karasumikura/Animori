@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animori/bean/widget/animori_design.dart';
 
 const double tonalCardRadius = 24;
 
@@ -13,10 +14,6 @@ class TonalCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(tonalCardRadius),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(padding: padding, child: child),
-      );
+  Widget build(BuildContext context) =>
+      AnimoriPanel(radius: tonalCardRadius, padding: padding, child: child);
 }

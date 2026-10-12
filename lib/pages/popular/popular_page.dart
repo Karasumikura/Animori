@@ -1,9 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:animori/bean/widget/bangumi_mirror_error_widget.dart';
-import 'package:animori/bean/widget/animori_menu.dart';
-import 'package:animori/modules/bangumi/bangumi_item.dart';
+import 'package:animori/bean/widget/animori_design.dart';
+import 'package:animori/pages/popular/discovery_hero.dart';
 import 'package:animori/pages/popular/popular_controller.dart';
 import 'package:animori/bean/card/bangumi_card.dart';
 import 'package:animori/utils/constants.dart';
@@ -15,10 +14,7 @@ import 'package:animori/bean/appbar/drag_to_move_bar.dart' as dtb;
 import 'package:animori/utils/device.dart';
 
 class PopularPage extends StatefulWidget {
-  const PopularPage({
-    super.key,
-    required this.controller,
-  });
+  const PopularPage({super.key, required this.controller});
 
   final PopularController controller;
 
@@ -54,8 +50,9 @@ class _PopularPageState extends State<PopularPage> {
     if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 200 &&
         !popularController.isLoadingMore) {
-      AnimoriLogger()
-          .i('PopularPageController: Fetching next recommendation batch');
+      AnimoriLogger().i(
+        'PopularPageController: Fetching next recommendation batch',
+      );
       if (popularController.currentTag != '') {
         popularController.queryBangumiByTag();
       } else {
@@ -65,203 +62,158 @@ class _PopularPageState extends State<PopularPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      bottom: false,
+      child: CustomScrollView(
         controller: scrollController,
         slivers: [
-          buildSliverAppBar(),
           SliverToBoxAdapter(
-            child: Observer(
-              builder: (_) => AnimatedOpacity(
-                opacity: popularController.isLoadingMore ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: popularController.isLoadingMore
-                    ? const LinearProgressIndicator(minHeight: 4)
-                    : const SizedBox(height: 4),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  dtb.DragToMoveArea(
+                    child: AnimoriHeading(
+                      eyebrow: 'ANIMORI / DISCOVER',
+                      title: '发现你的下一部心动',
+                      description: '好故事，值得以更清晰的方式相遇。',
+                      action: Wrap(children: buildActions()),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const AnimoriDiscoveryHero(),
+                  const SizedBox(height: 24),
+                  Observer(
+                    builder: (_) => SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final tag in ['', ...defaultAnimeTags])
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(tag.isEmpty ? '为你发现' : tag),
+                                selected: popularController.currentTag == tag,
+                                onSelected: (_) => _selectTag(tag),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Observer(
+                    builder: (_) => Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            popularController.currentTag.isEmpty
+                                ? '此刻热门'
+                                : popularController.currentTag,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () =>
+                              context.pushNamed('/settings/history/'),
+                          icon: const Icon(Icons.history_rounded, size: 18),
+                          label: const Text('继续观看'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                  StyleString.cardSpace, 0, StyleString.cardSpace, 0),
-              sliver: Observer(builder: (_) {
-                if (popularController.isTimeOut) {
-                  return SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 400,
-                      child: BangumiMirrorErrorWidget(
-                        onRetry: () {
-                          if (popularController.trendList.isEmpty) {
-                            popularController.queryBangumiByTrend();
-                          } else {
-                            popularController.queryBangumiByTag();
-                          }
-                        },
-                        onSettingsReturned: () {
-                          if (mounted) {
-                            setState(() {});
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                }
-                return contentGrid(
-                  (popularController.currentTag == '')
-                      ? popularController.trendList
-                      : popularController.bangumiList,
-                );
-              })),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => scrollController.animateTo(0,
-            duration: const Duration(milliseconds: 350), curve: Curves.easeOut),
-        child: const Icon(Icons.arrow_upward),
-      ),
-    );
-  }
-
-  Widget contentGrid(List<BangumiItem> bangumiList) {
-    int crossCount = 3;
-    if (MediaQuery.sizeOf(context).width > LayoutBreakpoint.compact['width']!) {
-      crossCount = 5;
-    }
-    if (MediaQuery.sizeOf(context).width > LayoutBreakpoint.medium['width']!) {
-      crossCount = 6;
-    }
-    return SliverPadding(
-      padding: const EdgeInsets.all(8),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          // 行间距
-          mainAxisSpacing: StyleString.cardSpace - 2,
-          // 列间距
-          crossAxisSpacing: StyleString.cardSpace,
-          // 列数
-          crossAxisCount: crossCount,
-          mainAxisExtent:
-              MediaQuery.of(context).size.width / crossCount / 0.65 +
-                  MediaQuery.textScalerOf(context).scale(32.0),
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (BuildContext context, int index) {
-            return bangumiList.isNotEmpty
-                ? BangumiCardV(bangumiItem: bangumiList[index])
-                : null;
-          },
-          childCount: bangumiList.isNotEmpty ? bangumiList.length : 10,
-        ),
-      ),
-    );
-  }
-
-  Widget buildSliverAppBar() {
-    final theme = Theme.of(context);
-    return SliverAppBar(
-      pinned: true,
-      stretch: true,
-      expandedHeight: 120,
-      elevation: 0,
-      titleSpacing: 0,
-      centerTitle: false,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      actions: buildActions(),
-      title: null,
-      flexibleSpace: SafeArea(
-        child: dtb.DragToMoveArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final double maxExtent = 120 - MediaQuery.of(context).padding.top;
-              final t = (1 -
-                  ((constraints.maxHeight - kToolbarHeight) /
-                          (maxExtent - kToolbarHeight))
-                      .clamp(0.0, 1.0));
-              // 字重收缩后为 w500，展开时为 w700
-              final fontWeight = t < 0.5 ? FontWeight.w700 : FontWeight.w500;
-              final fontSize = lerpDouble(28, 20, t)!;
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                      left: 16, top: 8, bottom: 8, right: 60),
+          Observer(
+            builder: (_) {
+              if (popularController.isTimeOut)
+                return SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 44,
-                    child: Observer(
-                      builder: (_) {
-                        final bool isTrend = popularController.currentTag == '';
-                        return AnimoriMenuButton(
-                          animated: true,
-                          style: const MenuStyle(
-                            maximumSize: WidgetStatePropertyAll(Size(240, 350)),
-                          ),
-                          menuChildren: [
-                            for (final tag in ['', ...defaultAnimeTags])
-                              AnimoriMenuItem(
-                                label: tag.isEmpty ? '热门番组' : tag,
-                                selected: tag == popularController.currentTag,
-                                onPressed: () => _selectTag(tag),
-                              ),
-                          ],
-                          builder: (context, toggle) => InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: toggle,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isTrend ? '热门番组' : popularController.currentTag,
-                                  style: theme.textTheme.headlineMedium!.copyWith(
-                                    fontWeight: fontWeight,
-                                    fontSize: fontSize,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.keyboard_arrow_down,
-                                    size: fontSize, color: theme.iconTheme.color),
-                              ],
-                            ),
-                          ),
-                        );
+                    height: 360,
+                    child: BangumiMirrorErrorWidget(
+                      onRetry: () => popularController.currentTag.isEmpty
+                          ? popularController.queryBangumiByTrend(type: 'init')
+                          : popularController.queryBangumiByTag(type: 'init'),
+                      onSettingsReturned: () {
+                        if (mounted) setState(() {});
                       },
                     ),
                   ),
+                );
+              final items = popularController.currentTag.isEmpty
+                  ? popularController.trendList
+                  : popularController.bangumiList;
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                sliver: SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final count = (constraints.crossAxisExtent / 170)
+                        .floor()
+                        .clamp(2, 7);
+                    final cardWidth =
+                        (constraints.crossAxisExtent - (count - 1) * 16) /
+                        count;
+                    return SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: count,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 24,
+                        mainAxisExtent:
+                            cardWidth / 0.68 +
+                            MediaQuery.textScalerOf(context).scale(64),
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) =>
+                            BangumiCardV(bangumiItem: items[index]),
+                        childCount: items.length,
+                      ),
+                    );
+                  },
                 ),
               );
             },
           ),
-        ),
+          SliverToBoxAdapter(
+            child: Observer(
+              builder: (_) => popularController.isLoadingMore
+                  ? const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : const SizedBox(height: 24),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 
-  List<Widget> buildActions() {
-    return <Widget>[
-      if (MediaQuery.of(context).orientation == Orientation.portrait)
-        IconButton(
-          tooltip: '搜索',
-          onPressed: () => context.pushNamed('/search/'),
-          icon: const Icon(Icons.search),
-        ),
+  List<Widget> buildActions() => [
+    IconButton(
+      tooltip: '搜索番剧',
+      onPressed: () => context.pushNamed('/search/'),
+      icon: const Icon(Icons.search_rounded),
+    ),
+    if (isDesktop() && !DesktopWindowConfig.showWindowButton)
       IconButton(
-        tooltip: '历史记录',
-        onPressed: () => context.pushNamed('/settings/history/'),
-        icon: const Icon(Icons.history),
+        tooltip: '关闭窗口',
+        onPressed: () => windowManager.close(),
+        icon: const Icon(Icons.close_rounded),
       ),
-      if (isDesktop() && !DesktopWindowConfig.showWindowButton)
-        IconButton(
-          tooltip: '退出',
-          onPressed: () => windowManager.close(),
-          icon: const Icon(Icons.close),
-        ),
-    ];
-  }
+  ];
 
   Future<void> _selectTag(String selected) async {
     if (!mounted || selected == popularController.currentTag) return;
-    scrollController.animateTo(0,
-        duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+    scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
     popularController.setCurrentTag(selected);
     if (selected.isEmpty) {
       popularController.clearBangumiList();

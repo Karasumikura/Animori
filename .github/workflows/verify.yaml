@@ -26,3 +26,10 @@ jobs:
         run: flutter analyze --no-fatal-infos --fatal-warnings
       - name: Test
         run: flutter test --reporter expanded
+      - name: Upload rendered UI previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: animori-ui-preview
+          path: build/ui-preview/*.png
+          if-no-files-found: ignore

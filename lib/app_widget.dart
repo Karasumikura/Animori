@@ -13,7 +13,7 @@ import 'package:animori/bean/dialog/dialog_helper.dart';
 import 'package:animori/bean/dialog/exit_confirmation_dialog.dart';
 import 'package:animori/bean/settings/theme_provider.dart';
 import 'package:animori/navigation.dart';
-import 'package:animori/utils/constants.dart';
+import 'package:animori/bean/widget/animori_design.dart';
 import 'package:animori/utils/device.dart';
 import 'package:animori/utils/theme.dart';
 
@@ -130,7 +130,7 @@ class _AppWidgetState extends State<AppWidget>
   Color _storedThemeColor() {
     final defaultThemeColor = GStorage.getSetting(SettingsKeys.themeColor);
     if (defaultThemeColor == 'default') {
-      return Colors.green;
+      return animoriMint;
     }
     return Color(int.parse(defaultThemeColor, radix: 16));
   }
@@ -141,23 +141,20 @@ class _AppWidgetState extends State<AppWidget>
     Color? color,
     ColorScheme? colorScheme,
   }) {
-    return ThemeData(
-      useMaterial3: true,
-      fontFamily: fontFamily,
+    return buildAnimoriTheme(
       brightness: brightness,
-      colorSchemeSeed: color,
+      color: color,
       colorScheme: colorScheme,
-      progressIndicatorTheme: progressIndicatorTheme2024,
-      sliderTheme: sliderTheme2024,
-      pageTransitionsTheme: pageTransitionsTheme2024,
+      fontFamily: fontFamily,
     );
   }
 
   void _syncWindowsTitleBarBrightness(ThemeProvider themeProvider) {
     if (!Platform.isWindows) return;
 
-    final brightness =
-        themeProvider.isEffectiveDark() ? Brightness.dark : Brightness.light;
+    final brightness = themeProvider.isEffectiveDark()
+        ? Brightness.dark
+        : Brightness.light;
     if (_lastTitleBarBrightness == brightness) return;
 
     _lastTitleBarBrightness = brightness;
@@ -205,13 +202,10 @@ class _AppWidgetState extends State<AppWidget>
 
         action = result.action;
         if (result.rememberChoice) {
-          await GStorage.putSetting(
-            SettingsKeys.exitBehavior,
-            switch (action) {
-              ExitDialogAction.exit => 0,
-              ExitDialogAction.minimizeToTray => 1,
-            },
-          );
+          await GStorage.putSetting(SettingsKeys.exitBehavior, switch (action) {
+            ExitDialogAction.exit => 0,
+            ExitDialogAction.minimizeToTray => 1,
+          });
         }
       }
 
@@ -231,11 +225,13 @@ class _AppWidgetState extends State<AppWidget>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused) {
-      AnimoriLogger()
-          .i("AppLifecycleState.paused: Application moved to background");
+      AnimoriLogger().i(
+        "AppLifecycleState.paused: Application moved to background",
+      );
     } else if (state == AppLifecycleState.resumed) {
-      AnimoriLogger()
-          .i("AppLifecycleState.resumed: Application moved to foreground");
+      AnimoriLogger().i(
+        "AppLifecycleState.resumed: Application moved to foreground",
+      );
       await MeteredNetworkService.refresh();
     } else if (state == AppLifecycleState.inactive) {
       AnimoriLogger().i("AppLifecycleState.inactive: Application is inactive");
@@ -247,7 +243,8 @@ class _AppWidgetState extends State<AppWidget>
     super.didChangePlatformBrightness();
     final ThemeProvider themeProvider = context.read<ThemeProvider>();
     AnimoriLogger().i(
-        "Platform brightness changed, themeMode: ${themeProvider.themeMode}");
+      "Platform brightness changed, themeMode: ${themeProvider.themeMode}",
+    );
 
     _syncWindowsTitleBarBrightness(themeProvider);
   }
@@ -266,11 +263,13 @@ class _AppWidgetState extends State<AppWidget>
       await trayManager.setToolTip('Animori');
     }
 
-    Menu trayMenu = Menu(items: [
-      MenuItem(key: 'show_window', label: '显示窗口'),
-      MenuItem.separator(),
-      MenuItem(key: 'exit', label: '退出 Animori')
-    ]);
+    Menu trayMenu = Menu(
+      items: [
+        MenuItem(key: 'show_window', label: '显示窗口'),
+        MenuItem.separator(),
+        MenuItem(key: 'exit', label: '退出 Animori'),
+      ],
+    );
     await trayManager.setContextMenu(trayMenu);
   }
 
@@ -303,13 +302,21 @@ class _AppWidgetState extends State<AppWidget>
 
         return MaterialApp.router(
           title: "Animori",
+          builder: (context, child) =>
+              AnimoriBackdrop(child: child ?? const SizedBox.shrink()),
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           supportedLocales: const [
             Locale.fromSubtags(
-                languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN")
+              languageCode: 'zh',
+              scriptCode: 'Hans',
+              countryCode: "CN",
+            ),
           ],
           locale: const Locale.fromSubtags(
-              languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN"),
+            languageCode: 'zh',
+            scriptCode: 'Hans',
+            countryCode: "CN",
+          ),
           theme: lightTheme,
           darkTheme: effectiveDarkTheme,
           themeMode: themeProvider.themeMode,

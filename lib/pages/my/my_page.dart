@@ -69,11 +69,10 @@ class _MyPageState extends State<MyPage> {
       appBar: SysAppBar(
         toolbarHeight: 72,
         title: Text(
-          '我的',
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+          '我的空间',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         needTopOffset: false,
         actions: [
@@ -89,10 +88,8 @@ class _MyPageState extends State<MyPage> {
         top: false,
         bottom: false,
         child: Observer(
-          builder: (context) => MySpaceView(
-            stats: widget.controller.watchStats,
-            onOpen: _open,
-          ),
+          builder: (context) =>
+              MySpaceView(stats: widget.controller.watchStats, onOpen: _open),
         ),
       ),
     );
