@@ -149,6 +149,9 @@ class _PopularPageState extends State<PopularPage> {
               final items = popularController.currentTag.isEmpty
                   ? popularController.trendList
                   : popularController.bangumiList;
+              // Read the observable list inside Observer, before the sliver's
+              // deferred layout callback. Otherwise additions go unobserved.
+              final visibleItems = items.toList(growable: false);
               return SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 sliver: SliverLayoutBuilder(
@@ -170,8 +173,8 @@ class _PopularPageState extends State<PopularPage> {
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) =>
-                            BangumiCardV(bangumiItem: items[index]),
-                        childCount: items.length,
+                            BangumiCardV(bangumiItem: visibleItems[index]),
+                        childCount: visibleItems.length,
                       ),
                     );
                   },
